@@ -36,6 +36,7 @@ class ProcessGroupUCC : public ProcessGroup {
         virtual ~WorkUCX();
         bool isCompleted() override;
         bool isSuccess() const override;
+        int sourceRank() const override;
 #if TORCH_VER_MAJOR == 1 && TORCH_VER_MINOR <= 6
         bool wait() override;
 #else

@@ -166,6 +166,9 @@ void torch_ucx_recv_cmpl_cb(void* request, ucs_status_t status, ucp_tag_recv_inf
 {
   torch_ucx_request_t *req = static_cast<torch_ucx_request_t*>(request);
   req->status = TORCH_UCX_REQUEST_DONE;
+  // FIXME(tom) should use a macro to mask & shift in case tag base isn't 0
+  req->sender = info->sender_tag & TORCH_UCX_RANK_MASK   ;
+  //fprintf(stderr, "torch_ucx_recv_cmpl_cb: success with sender %d, %lx, %lx\n", req->sender, info->sender_tag, TORCH_UCX_RANK_MASK);
 }
 
 }

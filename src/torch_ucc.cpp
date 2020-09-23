@@ -79,6 +79,15 @@ bool ProcessGroupUCC::WorkUCX::isSuccess() const
   return true;
 }
 
+int ProcessGroupUCC::WorkUCX::sourceRank() const
+{
+    if (req) {
+        return req->sender;
+    } else {
+        return 0;
+    }
+}
+
 #if TORCH_VER_MAJOR == 1 && TORCH_VER_MINOR <= 6
 bool ProcessGroupUCC::WorkUCX::wait()
 {
@@ -465,7 +474,18 @@ std::shared_ptr<ProcessGroup::Work> ProcessGroupUCC::recv(std::vector<at::Tensor
 std::shared_ptr<ProcessGroup::Work> ProcessGroupUCC::recvAnysource(std::vector<at::Tensor>& tensors,
                                                                    int tag)
 {
-    throw std::runtime_error("ProcessGroupUCC: recvAnysource is not supported");
+    auto   &tensor = tensors[0];
+    size_t size    = tensor.numel() * tensor.element_size();
+    torch_ucx_request_t *req;
+    torch_ucx_status_t  st;
+
+    st = torch_ucx_recv_nb(ucx_comm, tensor.data_ptr(), size, -1,
+                           tag, &req, TORCH_UCX_P2P_TAG);
+    if (st < 0) {
+       throw std::runtime_error("ProcessGroupUCC: failed to recv msg");
+    }
+
+    return std::make_shared<ProcessGroupUCC::WorkUCX>(req, ucx_comm);
 }
 
 std::shared_ptr<ProcessGroup> ProcessGroupUCC::createProcessGroupUCC(

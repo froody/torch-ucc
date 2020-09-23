@@ -97,6 +97,7 @@ enum torch_ucx_request_status_t {
 
 struct torch_ucx_request_t {
     torch_ucx_request_status_t status;
+    int sender = -1;
 };
 
 struct torch_ucx_comm_t {
@@ -191,6 +192,9 @@ torch_ucx_recv_nb(torch_ucx_comm_t *comm,
             break;
         case TORCH_UCX_P2P_TAG:
             TORCH_UCX_MAKE_P2P_RECV_TAG(ucp_tag, ucp_tag_mask, tag, src_rank);
+            if (src_rank == -1) {
+                ucp_tag_mask = 0;
+            }
             break;
         case TORCH_UCX_OOB_TAG:
             TORCH_UCX_MAKE_OOB_RECV_TAG(ucp_tag, ucp_tag_mask, tag, src_rank);
@@ -237,8 +241,8 @@ torch_ucx_req_test(torch_ucx_comm_t *comm, torch_ucx_request_t **reqs,
                 if (reqs[i]->status != TORCH_UCX_REQUEST_DONE) {
                     torch_ucx_comm_progress(comm);
                 } else {
-                    torch_ucx_request_free(reqs[i]);
-                    reqs[i] = NULL;
+                    //torch_ucx_request_free(reqs[i]);
+                    //reqs[i] = NULL;
                     if (completed_idx) {
                         *completed_idx = i;
                     }
